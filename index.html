@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>メニュー栄養計算</title>
+
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* メイン（上半分） */
+  .main {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  /* サイドバー（下半分固定） */
+  .sidebar {
+    height: 50vh;
+    background: #f0f0f0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    border-top: 1px solid #ccc;
+    transition: height 0.3s ease;
+    position: relative;
+  }
+
+  /* 折りたたみ時 */
+  .sidebar.collapsed {
+    height: 40px;
+  }
+
+  /* サイドバーのヘッダー */
+  .sidebar-header {
+    background: #e0e0e0;
+    padding: 10px;
+    font-size: 18px;
+    border-bottom: 1px solid #ccc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* サイドバーの中身 */
+  .sidebar-content {
+    padding: 15px;
+    overflow-y: auto;
+    height: calc(50vh - 50px);
+  }
+
+  .sidebar.collapsed .sidebar-content {
+    display: none;
+  }
+
+  .selected-list {
+    margin-top: 20px;
+    padding: 10px;
+    background: #fafafa;
+    border: 1px solid #ddd;
+  }
+
+  button { padding: 10px 16px; font-size: 16px; }
+  input[type="text"] { width: 100%; padding: 8px; margin-bottom: 10px; font-size: 16px; }
+
+  /* スマホ用 */
+  @media (max-width: 600px) {
+    .main { padding: 15px; }
+    button { width: 100%; margin-top: 15px; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- メイン画面（上半分） -->
+<div class="main">
+  <h2>選択したメニュー</h2>
+  <div id="selectedItems" class="selected-list">まだ選択されていません</div>
+
+  <button onclick="calc()">合計を計算する</button>
+
+  <div class="result" id="result"></div>
+</div>
+
+<!-- サイドバー（下半分） -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <span>メニュー検索</span>
+    <button onclick="toggleSidebar()" id="toggleBtn">&#9660;</button>
+  </div>
+
+  <div class="sidebar-content">
+    <input type="text" id="search" placeholder="検索（例: カレー）" oninput="filterMenu()">
+
+    <h3>メニュー一覧</h3>
+    <div id="menuList"></div>
+  </div>
+</div>
+
+<script>
+const menu = {
+  1: { name: "カレー", price: 500, kcal: 700, protein: 12, fat: 20, salt: 3.0, ca: 50, veg: 80 },
+  2: { name: "サラダ", price: 200, kcal: 80, protein: 2, fat: 1, salt: 0.3, ca: 30, veg: 70 },
+  3: { name: "唐揚げ", price: 450, kcal: 600, protein: 25, fat: 35, salt: 2.5, ca: 20, veg: 10 }
+};
+
+// メニュー一覧を表示
+function showMenu(filter = "") {
+  let html = "";
+  for (const num in menu) {
+    const item = menu[num];
+    if (item.name.includes(filter)) {
+      html += `
+        <label>
+          <input type="checkbox" class="menu-check" value="${num}" onchange="updateSelected()">
+          ${num}: ${item.name}（${item.price}円）
+        </label><br>
+      `;
+    }
+  }
+  document.getElementById("menuList").innerHTML = html;
+}
+showMenu();
+
+// 検索
+function filterMenu() {
+  const word = document.getElementById("search").value;
+  showMenu(word);
+  updateSelected();
+}
+
+// 選択中メニュー表示
+function updateSelected() {
+  const checks = document.querySelectorAll(".menu-check:checked");
+  let html = "";
+
+  checks.forEach(c => {
+    const n = c.value;
+    html += `${menu[n].name}（${menu[n].price}円）<br>`;
+  });
+
+  document.getElementById("selectedItems").innerHTML =
+    html || "まだ選択されていません";
+}
+
+// 合計計算
+function calc() {
+  const checks = document.querySelectorAll(".menu-check:checked");
+
+  const total = { price:0, kcal:0, protein:0, fat:0, salt:0, ca:0, veg:0 };
+
+  checks.forEach(c => {
+    const n = c.value;
+    total.price   += menu[n].price;
+    total.kcal    += menu[n].kcal;
+    total.protein += menu[n].protein;
+    total.fat     += menu[n].fat;
+    total.salt    += menu[n].salt;
+    total.ca      += menu[n].ca;
+    total.veg     += menu[n].veg;
+  });
+
+  document.getElementById("result").innerHTML = `
+    <h3>合計結果</h3>
+    金額：${total.price} 円<br>
+    エネルギー：${total.kcal} kcal<br>
+    たんぱく質：${total.protein} g<br>
+    脂質：${total.fat} g<br>
+    食塩相当量：${total.salt} g<br>
+    カルシウム：${total.ca} mg<br>
+    野菜量：${total.veg} g
+  `;
+}
+
+// サイドバー開閉
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebar");
+  const btn = document.getElementById("toggleBtn");
+
+  sidebar.classList.toggle("collapsed");
+
+  if (sidebar.classList.contains("collapsed")) {
+    btn.innerHTML = "&#9650;"; // ▲ 開く
+  } else {
+    btn.innerHTML = "&#9660;"; // ▼ 閉じる
+  }
+}
+</script>
+
+</body>
+</html>
