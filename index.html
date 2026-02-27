@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>メニュー栄養計算</title>
+<style>
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    display: flex;
+  }
+
+  /* サイドバー */
+  .sidebar {
+    width: 260px;
+    background: #f0f0f0;
+    padding: 20px;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto;
+    border-right: 1px solid #ccc;
+  }
+
+  /* メインエリア */
+  .main {
+    flex: 1;
+    padding: 20px;
+  }
+
+  .selected-list {
+    margin-top: 20px;
+    padding: 10px;
+    background: #fafafa;
+    border: 1px solid #ddd;
+  }
+
+  button { padding: 10px 16px; font-size: 16px; }
+  .result { margin-top: 20px; }
+  input[type="text"] { width: 100%; padding: 8px; margin-bottom: 10px; font-size: 16px; }
+
+  /* --- スマホ用レイアウト --- */
+  @media (max-width: 600px) {
+    body {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      height: auto;
+      border-right: none;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .main {
+      padding: 15px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .selected-list {
+      font-size: 15px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- サイドバー -->
+<div class="sidebar">
+  <h3>メニュー検索</h3>
+  <input type="text" id="search" placeholder="検索（例: カレー）" oninput="filterMenu()">
+
+  <h3>メニュー一覧</h3>
+  <div id="menuList"></div>
+</div>
+
+<!-- メイン画面 -->
+<div class="main">
+  <h2>選択したメニュー</h2>
+
+  <div id="selectedItems" class="selected-list">まだ選択されていません</div>
+
+  <button onclick="calc()">合計を計算する</button>
+
+  <div class="result" id="result"></div>
+</div>
+
+<script>
+const menu = {
+  1: { name: "カレー", price: 500, kcal: 700, protein: 12, fat: 20, salt: 3.0, ca: 50, veg: 80 },
+  2: { name: "サラダ", price: 200, kcal: 80, protein: 2, fat: 1, salt: 0.3, ca: 30, veg: 70 },
+  3: { name: "唐揚げ", price: 450, kcal: 600, protein: 25, fat: 35, salt: 2.5, ca: 20, veg: 10 }
+};
+
+// メニュー一覧を表示
+function showMenu(filter = "") {
+  let html = "";
+  for (const num in menu) {
+    const item = menu[num];
+    if (item.name.includes(filter)) {
+      html += `
+        <label>
+          <input type="checkbox" class="menu-check" value="${num}" onchange="updateSelected()">
+          ${num}: ${item.name}（${item.price}円）
+        </label><br>
+      `;
+    }
+  }
+  document.getElementById("menuList").innerHTML = html;
+}
+showMenu();
+
+// 検索バーで絞り込み
+function filterMenu() {
+  const word = document.getElementById("search").value;
+  showMenu(word);
+  updateSelected();
+}
+
+// 選択中メニューを表示
+function updateSelected() {
+  const checks = document.querySelectorAll(".menu-check:checked");
+  let html = "";
+
+  checks.forEach(c => {
+    const n = c.value;
+    html += `${menu[n].name}（${menu[n].price}円）<br>`;
+  });
+
+  document.getElementById("selectedItems").innerHTML =
+    html || "まだ選択されていません";
+}
+
+// 合計計算
+function calc() {
+  const checks = document.querySelectorAll(".menu-check:checked");
+
+  const total = { price:0, kcal:0, protein:0, fat:0, salt:0, ca:0, veg:0 };
+
+  checks.forEach(c => {
+    const n = c.value;
+    total.price   += menu[n].price;
+    total.kcal    += menu[n].kcal;
+    total.protein += menu[n].protein;
+    total.fat     += menu[n].fat;
+    total.salt    += menu[n].salt;
+    total.ca      += menu[n].ca;
+    total.veg     += menu[n].veg;
+  });
+
+  document.getElementById("result").innerHTML = `
+    <h3>合計結果</h3>
+    金額：${total.price} 円<br>
+    エネルギー：${total.kcal} kcal<br>
+    たんぱく質：${total.protein} g<br>
+    脂質：${total.fat} g<br>
+    食塩相当量：${total.salt} g<br>
+    カルシウム：${total.ca} mg<br>
+    野菜量：${total.veg} g
+  `;
+}
+</script>
+
+</body>
+</html>
